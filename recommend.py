@@ -153,8 +153,9 @@ def write_subreddit_similarity(subreddit1, subreddit2):
 	data1 = ({'reddit1': subreddit1, 'reddit2':subreddit2, 'val': value})
 	data2 = ({'reddit1': subreddit2, 'reddit2':subreddit1, 'val': value})
 
-	print(cur.mogrify(SQL, data1))
-	print(cur.mogrify(SQL, data2))
+	cur.execute(SQL, data1)
+	cur.execute(SQL, data2)
+	cur.commit()
 
 	return None
 
@@ -177,7 +178,7 @@ def read_subreddit_similarity(subreddit1, subreddit2):
 	data = ({'reddit1': subreddit1, 'reddit2':subreddit2})
 	print(cur.mogrify(SQL, data))
 	cur.execute(SQL, data)
-	print(cur.fetchall)
+	print cur.fetchall()
 	
 	return None
 
