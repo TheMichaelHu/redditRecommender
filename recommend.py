@@ -8,7 +8,8 @@
 # pull 100 unique users from comments						DONE
 # pull 100 subreddits from comments from each user 			DONE
 # create similarity function								DONE
-# write similarity to database 								DONE
+# write similarity to database 								CHANGE
+# write "points" to database
 # sort similarity and output recommendation					DONE
 
 import requests
@@ -20,10 +21,11 @@ import urlparse
 USR_AG = {'User-Agent' : 'Arbitrary User Agent Name'}
 NUM_USERS = 100
 NUM_SUBREDDITS = 100
-SUBREDDITS = 
 
 def main():
-	recommend('gameofthrones')
+	total_subreddits = get_subreddit_vector().values()
+	for subreddit in total_subreddits:
+		write_subreddit_points(subreddit)
 
 # Takes subreddit, gives recommendation
 def recommend(subreddit):
@@ -97,6 +99,7 @@ def get_subreddit_vector():
 	results = cur.fetchall()
 	
 	subreddits = {}
+	
 	for subreddit in results:
 		subreddits[subreddit[0]] = 0
 	return subreddits
@@ -112,7 +115,7 @@ def get_subreddits(subreddit):
 			if subreddit in subreddits:
 				subreddits[subreddit] += 1
 
-	return subreddits.values()
+	return subreddits
 
 def dot_product(vector1, vector2):
 	dot_product = 0
@@ -128,13 +131,12 @@ def norm(vector):
 
 # Return the cosine similarity between two subreddits
 def cosine_similiarity(subreddit1, subreddit2):
-	vector1 = get_subreddits(subreddit1)
-	vector2 = get_subreddits(subreddit2)
+	vector1 = get_subreddits(subreddit1).values()
+	vector2 = get_subreddits(subreddit2).values()
 	return dot_product(vector1,vector2)/(norm(vector1)*norm(vector2))
 
-# Write the similarity of two subreddits to the database
-def write_subreddit_similarity(subreddit1, subreddit2):
-	#assuming the similarity will be the same for (subreddit1,subreddit2) and (subreddit2,subreddit1), we insert twice 
+# Write the points of a subreddit to the database
+def write_subreddit_points(subreddit):
 	urlparse.uses_netloc.append("postgres")
 	url = urlparse.urlparse("postgres://tzxzlthahxikmb:4BNoR1mJxoFquJtf0X322KTLO8@ec2-54-83-51-0.compute-1.amazonaws.com:5432/dbknaoq86ntmdo")
 
@@ -148,19 +150,21 @@ def write_subreddit_similarity(subreddit1, subreddit2):
 
 	cur = conn.cursor()
 
-	value = cosine_similiarity(subreddit1, subreddit2)
-	SQL = "INSERT INTO ratings(%(reddit1)s, %(reddit2)s) VALUES (%(val)s);"
-	data1 = ({'reddit1': subreddit1, 'reddit2':subreddit2, 'val': value})
-	data2 = ({'reddit1': subreddit2, 'reddit2':subreddit1, 'val': value})
+	# this is broken down this way because postgresql UPDATE is dumb and can't handle placeholder processing
+	query1 = "UPDATE ratings SET %s " % subreddit
+	dict = get_subreddits(subreddit)
+	for key, value in dict.iteritems():
 
-	cur.execute(SQL, data1)
-	cur.execute(SQL, data2)
-	cur.commit()
+		SQL = query1 + "= %(val)s WHERE reddit=%(key)s;"
+		data = ({'val': str(value), 'key': key})
+		cur.execute(SQL, data)
+		print cur.mogrify(SQL, data)
+		conn.commit()
 
 	return None
 
-# get subreddit similarity for these two subreddits
-def read_subreddit_similarity(subreddit1, subreddit2):
+# get subreddit points for these two subreddits
+def read_subreddit_points(subreddit1, subreddit2):
 	urlparse.uses_netloc.append("postgres")
 	url = urlparse.urlparse("postgres://tzxzlthahxikmb:4BNoR1mJxoFquJtf0X322KTLO8@ec2-54-83-51-0.compute-1.amazonaws.com:5432/dbknaoq86ntmdo")
 
@@ -203,4 +207,4 @@ def get_subreddit_recommendation(subreddit, num_of_results):
 	cur.execute(SQL, data)
 	print cur.fetchall()
 
-main()
+write_subreddit_points('askreddit')

@@ -22,7 +22,7 @@ def get(cur):
 	SQL = "SELECT * FROM ratings WHERE reddit = %s;"
 	data = (subreddit, )
 	print cur.mogrify(SQL, data)
-	cur.execute("select COLUMN_NAME from INFORMATION_SCHEMA.COLUMNS where table_name = %(var)s;", {'var':"ratings"})
+	cur.execute(SQL, data)
 
 def main():
 	
@@ -49,6 +49,19 @@ def main():
 			
 			get(cur)
 		
+		elif (input == "test"):
+		
+				dict = {'askreddit':5, 'music':6}
+				for key, value in dict.iteritems():
+					print key
+					print value
+				
+				# SQL = "UPDATE ratings SET %(reddit)s = %(value)s WHERE reddit=%(key)s;"
+				# data = ({'reddit': dict, 'val': value})
+				
+				# print cur.mogrify(SQL, data)
+				#cur.execute(SQL, data)
+				
 		elif (input == "populate"):
 		
 			redditList = ({"reddit": "reddit"},
@@ -260,10 +273,9 @@ gamedeals INTEGER,
 humor INTEGER,
 offbeat INTEGER,
 cooking INTEGER,
-buildapc INTEGER,
-changed DATE);""")
+buildapc INTEGER);""")
 		
-		conn.commit()
+		#conn.commit()
 		print cur.fetchall()
 
 # cur.execute("SELECT ratings.id, ratings.reddit, ratings.gadgets FROM ratings;")
