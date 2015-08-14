@@ -10,7 +10,8 @@
 # create similarity function								DONE
 # write similarity to database 								CHANGE
 # write "points" to database								DONE
-# sort similarity and output recommendation					CHANGE
+# run similarity on vector, output vector with similarity			
+# Given a user, get subreddits, run above method on each subreddit, 
 
 import requests
 import json
@@ -172,8 +173,28 @@ def write_subreddit_points(subreddit):
 
 	return None
 
-# Get all subreddits and subreddit points for this subreddit
+# Get all subreddits and subreddit points as a list of tuples
+def read_all_points():
+	urlparse.uses_netloc.append("postgres")
+	url = urlparse.urlparse("postgres://tzxzlthahxikmb:4BNoR1mJxoFquJtf0X322KTLO8@ec2-54-83-51-0.compute-1.amazonaws.com:5432/dbknaoq86ntmdo")
+
+	conn = psycopg2.connect(
+		database=url.path[1:],
+		user=url.username,
+		password=url.password,
+		host=url.hostname,
+		port=url.port
+	)
+
+	cur = conn.cursor()
+
+	cur.execute("SELECT * FROM ratings;")
+
+	return cur.fetchall()
+	
+# Get all subreddits and subreddit points for this subreddit as a dictionary
 def read_subreddit_points(subreddit):
+	
 	urlparse.uses_netloc.append("postgres")
 	url = urlparse.urlparse("postgres://tzxzlthahxikmb:4BNoR1mJxoFquJtf0X322KTLO8@ec2-54-83-51-0.compute-1.amazonaws.com:5432/dbknaoq86ntmdo")
 
@@ -191,10 +212,35 @@ def read_subreddit_points(subreddit):
 	SQL = query1 + " FROM ratings;"
 	data = ({'reddit1': subreddit})
 	cur.execute(SQL, data)
-	print cur.fetchall()
+	result = {}
+	
+	for item in cur.fetchall():
+		result[item[0]] = item[1]
 
-	return cur.fetchall()
+	return result
 
+# Get all subreddits and subreddit points for this subreddit as a dictionary
+def read_subreddit_points(subreddit, total_list):
+
+	subreddit_index = get_index(subreddit, total_list)
+
+	results = {}
+	for item in total_list:
+		item_to_list = list(item)
+		results[item_to_list(0)] = item_to_list.(subreddit_index)
+	
+	print results
+	return results
+
+# get the index of this subreddit)
+def get_index(subreddit, total_list):
+
+	for item in total_list:
+		if item[0] == subreddit:
+			return item[-1]
+			break;
+	return subreddit
+	
 # Get an ordered DESC list of subreddits by points for this subreddit
 def get_subreddit_points(subreddit, num_of_results):
 	urlparse.uses_netloc.append("postgres")
@@ -217,4 +263,22 @@ def get_subreddit_points(subreddit, num_of_results):
 	cur.execute(SQL, data)
 	print cur.fetchall()
 
-main()
+# run similarity on vector, output vector with similarity
+def similarity_vector(subreddit):
+	total = read_all_points()
+	
+	vector1 = q (subreddit, total)
+	results = {}
+	for subreddit_name, subreddit_points in vector1.iteritems():
+		print subreddit_name
+		print subreddit_points
+		vector2 = read_subreddit_points(subreddit_name, total)
+		
+		subreddit_similarity = dot_product(vector1.values(), vector2.values())/(norm(vector1.values())*norm(vector2.values()))
+		print subreddit_similarity 	
+		results[subreddit_name] = subreddit_similarity
+		
+	print results
+	return results
+
+similarity_vector("askreddit")
