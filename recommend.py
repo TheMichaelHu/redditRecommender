@@ -9,8 +9,8 @@
 # pull 100 subreddits from comments from each user 			DONE
 # create similarity function								DONE
 # write similarity to database 								CHANGE
-# write "points" to database
-# sort similarity and output recommendation					DONE
+# write "points" to database								DONE
+# sort similarity and output recommendation					CHANGE
 
 import requests
 import json
@@ -22,10 +22,10 @@ USR_AG = {'User-Agent' : 'Arbitrary User Agent Name'}
 NUM_USERS = 100
 NUM_SUBREDDITS = 100
 
+
 def main():
-	total_subreddits = get_subreddit_vector().values()
-	for subreddit in total_subreddits:
-		write_subreddit_points(subreddit)
+	for subreddit in SUBREDDITS:
+		read_subreddit_points(subreddit)
 
 # Takes subreddit, gives recommendation
 def recommend(subreddit):
@@ -53,10 +53,11 @@ def get_users(subreddit, num_users):
 				users.append(user)
 			index += 1
 		else:
-			data = get_next_page('http://www.reddit.com/r/'+subreddit+'/comments/.json', data['data']['after'])
-			index = 0
-			if data is None:
+			if data['data']['after'] is None:
 				break
+			else:
+				data = get_next_page('http://www.reddit.com/r/'+subreddit+'/comments/.json', data['data']['after'])
+				index = 0
 
 	return users
 
@@ -68,17 +69,26 @@ def get_subreddits_for_user(user, num_subreddits):
 
 	index = 0
 	while(len(subreddits) < num_subreddits):
-		if(len(data['data']['children']) > index):
+		if not existing_page(user, data):
+		   break;
+		elif (len(data['data']['children']) > index):
 			subreddits.append(data['data']['children'][index]['data']['subreddit'])
 			index += 1
+		elif data['data']['after'] is None:
+			break
 		else:
 			data = get_next_page('http://www.reddit.com/user/'+user+'/comments/.json', data['data']['after'])
 			index = 0
-			if data is None:
-				break
 
 	return subreddits
 
+# Does this page exist?
+def existing_page(user, data):
+	if 'error' in data:
+		print user + " DOES NOT EXIST"
+		return False
+	return True
+	
 # queries database to produce vector (order arbitrary but preserved in same python ver.)
 def get_subreddit_vector():
 	urlparse.uses_netloc.append("postgres")
@@ -112,7 +122,7 @@ def get_subreddits(subreddit):
 	for user in users:
 		user_subreddits = get_subreddits_for_user(user, NUM_SUBREDDITS)
 		for subreddit in user_subreddits:
-			if subreddit in subreddits:
+			if subreddit in subreddits.keys():
 				subreddits[subreddit] += 1
 
 	return subreddits
@@ -158,13 +168,12 @@ def write_subreddit_points(subreddit):
 		SQL = query1 + "= %(val)s WHERE reddit=%(key)s;"
 		data = ({'val': str(value), 'key': key})
 		cur.execute(SQL, data)
-		print cur.mogrify(SQL, data)
 		conn.commit()
 
 	return None
 
-# get subreddit points for these two subreddits
-def read_subreddit_points(subreddit1, subreddit2):
+# Get all subreddits and subreddit points for this subreddit
+def read_subreddit_points(subreddit):
 	urlparse.uses_netloc.append("postgres")
 	url = urlparse.urlparse("postgres://tzxzlthahxikmb:4BNoR1mJxoFquJtf0X322KTLO8@ec2-54-83-51-0.compute-1.amazonaws.com:5432/dbknaoq86ntmdo")
 
@@ -178,15 +187,16 @@ def read_subreddit_points(subreddit1, subreddit2):
 
 	cur = conn.cursor()
 
-	SQL = "SELECT %(reddit1)s FROM ratings WHERE subreddit = %(reddit2)s;"
-	data = ({'reddit1': subreddit1, 'reddit2':subreddit2})
-	print(cur.mogrify(SQL, data))
+	query1 = "SELECT reddit, %s" % subreddit
+	SQL = query1 + " FROM ratings;"
+	data = ({'reddit1': subreddit})
 	cur.execute(SQL, data)
 	print cur.fetchall()
-	
-	return None
 
-def get_subreddit_recommendation(subreddit, num_of_results):
+	return cur.fetchall()
+
+# Get an ordered DESC list of subreddits by points for this subreddit
+def get_subreddit_points(subreddit, num_of_results):
 	urlparse.uses_netloc.append("postgres")
 	url = urlparse.urlparse("postgres://tzxzlthahxikmb:4BNoR1mJxoFquJtf0X322KTLO8@ec2-54-83-51-0.compute-1.amazonaws.com:5432/dbknaoq86ntmdo")
 
@@ -207,4 +217,4 @@ def get_subreddit_recommendation(subreddit, num_of_results):
 	cur.execute(SQL, data)
 	print cur.fetchall()
 
-write_subreddit_points('askreddit')
+main()
