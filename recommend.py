@@ -1,16 +1,16 @@
 # ---------------
 # recommend.py
 #
-# Offers subreddit recommendations based on a given subreddit
+# Offers subreddit recommendations based on a given subreddit or user
 # ---------------
 
 # Checklist of things to implement:
-# pull 100 unique users from comments						DONE
-# pull 100 subreddits from comments from each user 			DONE
-# create similarity function								DONE
-# write "points" to database								DONE
-# run similarity on vector, output vector with similarity	DONE		
-# Given a user, get subreddits, run above method on each subreddit
+# pull 100 unique users from comments									DONE
+# pull 100 subreddits from comments from each user 						DONE
+# create similarity function											DONE
+# write "points" to database											DONE
+# run similarity on vector, output vector with similarity				DONE		
+# Given a user, get subreddits, run above method on each subreddits 	DONE
 
 import requests
 import json
@@ -24,12 +24,46 @@ NUM_SUBREDDITS = 100
 
 
 def main():
-	similarity_vector("science")
+	#recommend('gameofthrones',10)
+	recommend_for_user('GovSchwarzenegger', 10)
+
+#takes user, gives subreddit recommendation (doesn't exclude ones they already visit)
+def recommend_for_user(user, num):
+	subreddit_weights = get_subreddit_vector()
+	subreddit_counts = {}
+	#count subreddits
+	for subreddit in get_subreddits_for_user(user, NUM_SUBREDDITS):
+		if subreddit in subreddit_weights:
+			if subreddit in subreddit_counts.keys():
+				subreddit_counts[subreddit] += 1
+			else:
+				subreddit_counts[subreddit] = 1
+	# Sum up similarity values of top 5 recommended subreddits for each subreddit
+	for subreddit in subreddit_counts:
+		# Get top 5 recommended subreddits for each subreddit
+		similarities = similarity_vector(subreddit)
+		top_five = []
+		for key in sorted(similarities, key=similarities.get, reverse=True):
+			if len(top_five) < 5:
+				top_five.append(key)
+			else:
+				break
+		# Add count * the similarity score
+		for key in top_five:
+			subreddit_weights[key] += similarities[key] * subreddit_counts[subreddit]
+	# Order dictionary and the top number specified
+	subreddits = get_recommended_subreddits_ordered(subreddit_weights)
+	print "Top",str(num),"recommended subreddits for",user+":"
+	for i in range(0,num):
+		print str(i+1)+":",subreddits[i]
 
 # Takes subreddit, gives recommendation
-def recommend(subreddit):
-	# just testin' some stuff...
-	print cosine_similiarity(subreddit,'fffffffuuuuuuuuuuuu')
+def recommend(subreddit, num):
+	similarities = similarity_vector(subreddit)
+	subreddits = get_recommended_subreddits_ordered(similarities)
+	print "Top",str(num),"recommended subreddits for",subreddit+":"
+	for i in range(1,num+1):
+		print str(i)+":",subreddits[i]
 
 # Gets JSON for page after the given one
 def get_next_page(url, after):
@@ -71,7 +105,7 @@ def get_subreddits_for_user(user, num_subreddits):
 		if not existing_page(user, data):
 		   break;
 		elif (len(data['data']['children']) > index):
-			subreddits.append(data['data']['children'][index]['data']['subreddit'])
+			subreddits.append(data['data']['children'][index]['data']['subreddit'].lower())
 			index += 1
 		elif data['data']['after'] is None:
 			break
@@ -273,5 +307,12 @@ def similarity_vector(subreddit):
 		results[subreddit_name] = subreddit_similarity
 		
 	return results
+
+# returns ordered list of recommended subreddits starting with the most recommended one
+def get_recommended_subreddits_ordered(similarities):
+	subreddits = []
+	for subreddit in sorted(similarities, key=similarities.get, reverse=True):
+		subreddits.append(subreddit)
+	return subreddits
 
 main()
