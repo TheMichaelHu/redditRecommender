@@ -11,6 +11,7 @@
 # write "points" to database											DONE
 # run similarity on vector, output vector with similarity				DONE		
 # Given a user, get subreddits, run above method on each subreddits 	DONE
+# Add basic user interface												DONE
 
 import requests
 import json
@@ -21,11 +22,22 @@ import urlparse
 USR_AG = {'User-Agent' : 'Arbitrary User Agent Name'}
 NUM_USERS = 100
 NUM_SUBREDDITS = 100
-
+NUM_RESULTS = 3
 
 def main():
-	#recommend('gameofthrones',10)
-	recommend_for_user('GovSchwarzenegger', 10)
+	print "Would you like recommendations for a (u)ser or (s)ubreddit?"
+	response = raw_input("> ")
+	if(response is not '' and response[0] == 'u'):
+		user = raw_input("Reddit User: ")
+		recommend_for_user(user, NUM_RESULTS)
+	else:
+		subreddit = raw_input("Subreddit: ")
+		if(subreddit in get_subreddit_vector().keys()):
+			recommend(subreddit, NUM_RESULTS)
+		else:
+			print "Sorry, that subreddit is not supported."
+	#recommend('gameofthrones',NUM_RESULTS)
+	#recommend_for_user('GovSchwarzenegger', NUM_RESULTS)
 
 #takes user, gives subreddit recommendation (doesn't exclude ones they already visit)
 def recommend_for_user(user, num):
