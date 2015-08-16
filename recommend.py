@@ -8,10 +8,9 @@
 # pull 100 unique users from comments						DONE
 # pull 100 subreddits from comments from each user 			DONE
 # create similarity function								DONE
-# write similarity to database 								CHANGE
 # write "points" to database								DONE
-# run similarity on vector, output vector with similarity			
-# Given a user, get subreddits, run above method on each subreddit, 
+# run similarity on vector, output vector with similarity	DONE		
+# Given a user, get subreddits, run above method on each subreddit
 
 import requests
 import json
@@ -25,8 +24,7 @@ NUM_SUBREDDITS = 100
 
 
 def main():
-	for subreddit in SUBREDDITS:
-		read_subreddit_points(subreddit)
+	similarity_vector("science")
 
 # Takes subreddit, gives recommendation
 def recommend(subreddit):
@@ -227,9 +225,8 @@ def read_subreddit_points(subreddit, total_list):
 	results = {}
 	for item in total_list:
 		item_to_list = list(item)
-		results[item_to_list(0)] = item_to_list.(subreddit_index)
+		results[item_to_list[0]] = item_to_list[subreddit_index]
 	
-	print results
 	return results
 
 # get the index of this subreddit)
@@ -267,18 +264,14 @@ def get_subreddit_points(subreddit, num_of_results):
 def similarity_vector(subreddit):
 	total = read_all_points()
 	
-	vector1 = q (subreddit, total)
+	vector1 = read_subreddit_points(subreddit, total)
 	results = {}
 	for subreddit_name, subreddit_points in vector1.iteritems():
-		print subreddit_name
-		print subreddit_points
 		vector2 = read_subreddit_points(subreddit_name, total)
 		
 		subreddit_similarity = dot_product(vector1.values(), vector2.values())/(norm(vector1.values())*norm(vector2.values()))
-		print subreddit_similarity 	
 		results[subreddit_name] = subreddit_similarity
 		
-	print results
 	return results
 
-similarity_vector("askreddit")
+main()
