@@ -25,8 +25,8 @@ NUM_SUBREDDITS = 100
 NUM_RESULTS = 3
 
 # ---- Similarity Function ----
-def cosine_similiarity(vector1, vector2):
-	return normalized_squared_eclidean_distance(vector1,vector2);
+def similarity_function(vector1, vector2):
+	return cosine_similiarity(vector1,vector2);
 # -----------------------------
 
 # ---- Similarity Function Options ----
