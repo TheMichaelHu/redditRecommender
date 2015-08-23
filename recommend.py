@@ -24,20 +24,78 @@ NUM_USERS = 100
 NUM_SUBREDDITS = 100
 NUM_RESULTS = 3
 
+# ---- Similarity Function ----
+def cosine_similiarity(vector1, vector2):
+	return normalized_squared_eclidean_distance(vector1,vector2);
+# -----------------------------
+
+# ---- Similarity Function Options ----
+
+# Return the cosine similarity between two subreddits
+def cosine_similiarity(vector1, vector2):
+	return dot_product(vector1,vector2)/(norm(vector1)*norm(vector2))
+
+def euclidean_distance(vector1, vector2):
+	acc = 0
+	for i in range(len(vector1)):
+		acc += (vector1[i]-vector2[i])**2
+	return acc**.5
+
+def normalized_squared_eclidean_distance(vector1, vector2):
+	norm_vector1 = []
+	len_vector1 = norm(vector1)
+	norm_vector2 = []
+	len_vector2 = norm(vector2)
+	if(len_vector1 == 0 or len_vector2 == 0):
+		return 0
+	for element in vector1:
+		norm_vector1.append(element/len_vector1) 
+	for element in vector1:
+		norm_vector2.append(element/len_vector2) 
+	return euclidean_distance(norm_vector1,norm_vector2)
+
+def pearson_correlation(vector1, vector2):
+    values = range(len(vector1))
+    
+    # Summation over all attributes for both vectors
+    sum_vector1 = sum([vector1[i] for i in values]) 
+    sum_vector2 = sum([vector2[i] for i in values])
+
+    # Sum the squares
+    square_sum1 = sum([vector1[i]**2 for i in values])
+    square_sum2 = sum([vector2[i]**2 for i in values])
+
+    # Add up the products
+    product = sum([vector1[i]*vector2[i] for i in values])
+
+    #Calculate Pearson Correlation score
+    numerator = product - (sum_vector1*sum_vector2/len(vector1))
+    denominator = ((square_sum1 - sum_vector1**2/len(vector1)) * (square_sum2 - 
+    	sum_vector2**2/len(vector1))) ** 0.5
+        
+    # Can"t have division by 0
+    if denominator == 0:
+        return 0
+
+    return numerator/denominator
+
+# -------------------------------------
+
 def main():
-	print "Would you like recommendations for a (u)ser or (s)ubreddit?"
-	response = raw_input("> ")
-	if(response is not '' and response[0] == 'u'):
-		user = raw_input("Reddit User: ")
-		recommend_for_user(user, NUM_RESULTS)
-	else:
-		subreddit = raw_input("Subreddit: ")
-		if(subreddit in get_subreddit_vector().keys()):
-			recommend(subreddit, NUM_RESULTS)
+	while(1):
+		print "Would you like recommendations for a (u)ser or (s)ubreddit?"
+		response = raw_input("> ")
+		if(response is not '' and response[0] == 'u'):
+			user = raw_input("Reddit User: ")
+			recommend_for_user(user, NUM_RESULTS)
 		else:
-			print "Sorry, that subreddit is not supported."
-	#recommend('gameofthrones',NUM_RESULTS)
-	#recommend_for_user('GovSchwarzenegger', NUM_RESULTS)
+			subreddit = raw_input("Subreddit: ")
+			if(subreddit in get_subreddit_vector().keys()):
+				recommend(subreddit, NUM_RESULTS)
+			else:
+				print "Sorry, that subreddit is not supported."
+		#recommend('gameofthrones',NUM_RESULTS)
+		#recommend_for_user('GovSchwarzenegger', NUM_RESULTS)
 
 #takes user, gives subreddit recommendation (doesn't exclude ones they already visit)
 def recommend_for_user(user, num):
@@ -184,12 +242,6 @@ def norm(vector):
 		sum_of_squares += element**2
 	return sum_of_squares**.5
 
-# Return the cosine similarity between two subreddits
-def cosine_similiarity(subreddit1, subreddit2):
-	vector1 = get_subreddits(subreddit1).values()
-	vector2 = get_subreddits(subreddit2).values()
-	return dot_product(vector1,vector2)/(norm(vector1)*norm(vector2))
-
 # Write the points of a subreddit to the database
 def write_subreddit_points(subreddit):
 	urlparse.uses_netloc.append("postgres")
@@ -315,7 +367,7 @@ def similarity_vector(subreddit):
 	for subreddit_name, subreddit_points in vector1.iteritems():
 		vector2 = read_subreddit_points(subreddit_name, total)
 		
-		subreddit_similarity = dot_product(vector1.values(), vector2.values())/(norm(vector1.values())*norm(vector2.values()))
+		subreddit_similarity = similarity_function(vector1.values(), vector2.values())
 		results[subreddit_name] = subreddit_similarity
 		
 	return results
@@ -324,7 +376,7 @@ def similarity_vector(subreddit):
 def get_recommended_subreddits_ordered(similarities):
 	subreddits = []
 	for subreddit in sorted(similarities, key=similarities.get, reverse=True):
-		subreddits.append(subreddit)
+		subreddits.append(subreddit+": "+str(similarities[subreddit]))
 	return subreddits
 
 main()
