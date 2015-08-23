@@ -50,7 +50,7 @@ def normalized_squared_eclidean_distance(vector1, vector2):
 		return 0
 	for element in vector1:
 		norm_vector1.append(element/len_vector1) 
-	for element in vector1:
+	for element in vector2:
 		norm_vector2.append(element/len_vector2) 
 	return euclidean_distance(norm_vector1,norm_vector2)
 
