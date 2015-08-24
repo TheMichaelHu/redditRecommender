@@ -9,17 +9,17 @@ import json
 import urllib2
 import psycopg2
 import urlparse
-import sys
+# import sys
 
 USR_AG = {'User-Agent' : 'Arbitrary User Agent Name'}
 NUM_USERS = 100
 NUM_SUBREDDITS = 100
 NUM_RESULTS = 10
-USING_DISTANCE = True
+# USING_DISTANCE = True
 
 # ---- Similarity Function Being Used ----
 def similarity_function(vector1, vector2):
-	return correlation_distance(vector1,vector2);
+	return cosine_similiarity(vector1,vector2);
 # ----------------------------------------
 
 # ---- Similarity Function Options ----
@@ -28,32 +28,32 @@ def similarity_function(vector1, vector2):
 def cosine_similiarity(vector1, vector2):
 	return dot_product(vector1,vector2)/(norm(vector1)*norm(vector2))
 
-# Return the euclidean distance between two subreddits
-def euclidean_distance(vector1, vector2):
-	acc = 0
-	for i in range(len(vector1)):
-		acc += (vector1[i]-vector2[i])**2
-	dist = acc**.5
-	return -dist # because we want lower distances
+# # Return the euclidean distance between two subreddits
+# def euclidean_distance(vector1, vector2):
+# 	acc = 0
+# 	for i in range(len(vector1)):
+# 		acc += (vector1[i]-vector2[i])**2
+# 	dist = acc**.5
+# 	return -abs(dist) # because we want lower distances
 
-# Return the normalized squared euclidean distance between two subreddits
-def normalized_squared_euclidean_distance(vector1, vector2):
-	mean1 = sum(vector1)/float(len(vector1))
-	mean2 = sum(vector2)/float(len(vector2))
-	vector1 = [x-mean1 for x in vector1]
-	vector2 = [x-mean2 for x in vector2]
-	diff = [x-y for x,y in zip(vector1,vector2)]
-	dist = .5*(norm(diff)**2)/(norm(vector1)**2+norm(vector2)**2)
-	return -dist # because we want lower distances
+# # Return the normalized squared euclidean distance between two subreddits
+# def normalized_squared_euclidean_distance(vector1, vector2):
+# 	mean1 = sum(vector1)/float(len(vector1))
+# 	mean2 = sum(vector2)/float(len(vector2))
+# 	vector1 = [x-mean1 for x in vector1]
+# 	vector2 = [x-mean2 for x in vector2]
+# 	diff = [x-y for x,y in zip(vector1,vector2)]
+# 	dist = .5*(norm(diff)**2)/(norm(vector1)**2+norm(vector2)**2)
+# 	return -abs(dist) # because we want lower distances
 
-# Return the pearson correlation between two subreddits
-def correlation_distance(vector1, vector2):
-	mean1 = sum(vector1)/float(len(vector1))
-	mean2 = sum(vector2)/float(len(vector2))
-	vector1 = [x-mean1 for x in vector1]
-	vector2 = [x-mean2 for x in vector2]
-	dist = 1-dot_product(vector1, vector2)/(norm(vector1)*norm(vector2))
-	return -dist # because we want lower distances
+# # Return the pearson correlation between two subreddits
+# def correlation_distance(vector1, vector2):
+# 	mean1 = sum(vector1)/float(len(vector1))
+# 	mean2 = sum(vector2)/float(len(vector2))
+# 	vector1 = [x-mean1 for x in vector1]
+# 	vector2 = [x-mean2 for x in vector2]
+# 	dist = 1-dot_product(vector1, vector2)/(norm(vector1)*norm(vector2))
+# 	return -abs(dist) # because we want lower distances
 
 # -------------------------------------
 
@@ -96,10 +96,10 @@ def recommend_for_user(user, num):
 				break
 		# Add count * the similarity score
 		for key in top_five:
-			if(USING_DISTANCE):
-				subreddit_weights[key] -= similarities[key] * subreddit_counts[subreddit]
-			else:
-				subreddit_weights[key] += similarities[key] * subreddit_counts[subreddit]
+			# if(USING_DISTANCE):
+			# 	subreddit_weights[key] -= similarities[key] * subreddit_counts[subreddit]
+			# else:
+			subreddit_weights[key] += similarities[key] * subreddit_counts[subreddit]
 	# Order dictionary and the top number specified
 	subreddits = get_recommended_subreddits_ordered(subreddit_weights)
 	print "Top",str(num),"recommended subreddits for",user+":"
@@ -354,10 +354,10 @@ def similarity_vector(subreddit):
 # returns ordered list of recommended subreddits starting with the most recommended one
 def get_recommended_subreddits_ordered(similarities):
 	subreddits = []
-	if(USING_DISTANCE):
-		for key,value in similarities.iteritems():
-			if value == 0:
-				similarities[key] = -sys.maxint-1
+	# if(USING_DISTANCE):
+	# 	for key,value in similarities.iteritems():
+	# 		if value == 0:
+	# 			similarities[key] = -sys.maxint-1
 	for subreddit in sorted(similarities, key=similarities.get, reverse=True):
 		subreddits.append(subreddit+": "+str(similarities[subreddit]))
 	return subreddits
